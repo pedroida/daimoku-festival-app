@@ -3,7 +3,9 @@ import { useState } from "react"
 import { Link } from "react-router"
 import { toast } from "sonner"
 
-import { Distrito } from "~/domain/entities/Distrito"
+import type { Daimoku } from "~/domain/entities/Daimoku"
+import type { Distrito } from "~/domain/entities/Distrito"
+import useHttpRequest from "~/hooks/common/useHttpRequest"
 
 import { ButtonComponent } from "../ui/button"
 import { Input } from "../ui/input"
@@ -19,7 +21,7 @@ interface RegisterDaimokuModalProps {
 interface FormData {
   memberCode: string
   memberName: string
-  distrito: string
+  distritoId: string
   date: string
   minutes: number
 }
@@ -30,28 +32,32 @@ export const RegisterDaimokuModal: React.FC<RegisterDaimokuModalProps> = ({
 }) => {
   const MAX_MINUTES = 240;
   const [isCreateDistritoModalOpen, setIsCreateDistritoModalOpen] = useState(false)
-  const [distritos, setDistritos] = useState<Distrito[]>([
-    new Distrito('1', 'Guarapuava'),
-    new Distrito('2', 'Uvaranas'),
-    new Distrito('3', 'Oficinas'),
-  ])
+  const [distritos, setDistritos] = useState<Distrito[]>([])
   const [formData, setFormData] = useState<FormData>({
     memberCode: '',
     memberName: '',
-    distrito: '',
+    distritoId: '',
     date: new Date().toISOString().split('T')[0],
     minutes: 20,
   })
   
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [errors, setErrors] = useState<Partial<FormData>>({})
+  const httpClient = useHttpRequest()
 
   React.useEffect(() => {
+    const fetchDistritos = async () => {
+      const response = await httpClient.get<Distrito[]>('/distritos')
+      if (response) {
+        setDistritos(response)
+      }
+    }
     if (isOpen) {
+      fetchDistritos()
       setFormData({
         memberCode: '',
         memberName: '',
-        distrito: '',
+        distritoId: '',
         date: new Date().toISOString().split('T')[0],
         minutes: 20,
       })
@@ -92,8 +98,8 @@ export const RegisterDaimokuModal: React.FC<RegisterDaimokuModalProps> = ({
       newErrors.memberCode = 'Código do membro ou nome do membro é obrigatório'
       newErrors.memberName = 'Código do membro ou nome do membro é obrigatório'
     }
-    if (!formData.distrito.trim()) {
-      newErrors.distrito = 'Distrito é obrigatório'
+    if (!formData.distritoId.trim()) {
+      newErrors.distritoId = 'Distrito é obrigatório'
     }
     if (!formData.date) {
       newErrors.date = 'Data é obrigatório'
@@ -112,15 +118,18 @@ export const RegisterDaimokuModal: React.FC<RegisterDaimokuModalProps> = ({
     
     setIsSubmitting(true)
     
-    try {
-      setIsOpen(false)
-      toast.success('Distrito criado com sucesso')
-    } catch (error) {
-      console.error('Error creating distrito:', error)
-      // Handle error (show toast, etc.)
-    } finally {
-      setIsSubmitting(false)
-    }
+    httpClient.post<FormData, Daimoku>('/daimokus', formData)
+      .then((response) => {
+        if (response) {
+          toast.success('Daimoku registrado com sucesso')
+          setIsOpen(false)
+        }
+      })
+      .catch((error) => {
+        toast.error(error.response.data.error)
+      }).finally(() => {
+        setIsSubmitting(false)
+      })
   }
 
   const handleCancel = () => {
@@ -128,7 +137,16 @@ export const RegisterDaimokuModal: React.FC<RegisterDaimokuModalProps> = ({
   }
 
   const addDistrito = (distrito: Distrito) => {
-    setDistritos([...distritos, distrito].sort((a, b) => a.name.localeCompare(b.name)))
+    httpClient.post<Distrito, Distrito>('/distritos', distrito)
+    .then((response) => {
+      if (response) {
+        setDistritos([...distritos, response].sort((a, b) => a.name.localeCompare(b.name)))
+        toast.success('Distrito adicionado com sucesso')
+      }
+    })
+    .catch((error) => {
+      toast.error(error.response.data.error)
+    })
   }
 
   return (
@@ -183,8 +201,8 @@ export const RegisterDaimokuModal: React.FC<RegisterDaimokuModalProps> = ({
             Distrito *
           </label>
           <Select
-            value={formData.distrito}
-            onValueChange={(value: string) => setFormData(prev => ({ ...prev, distrito: value }))}
+            value={formData.distritoId}
+            onValueChange={(value: string) => setFormData(prev => ({ ...prev, distritoId: value }))}
           >
             <SelectTrigger className="w-full">
               <SelectValue placeholder="Selecione o distrito" />
@@ -197,8 +215,8 @@ export const RegisterDaimokuModal: React.FC<RegisterDaimokuModalProps> = ({
               ))}
             </SelectContent>
           </Select>
-          {errors.distrito && (
-            <p className="text-red-500 text-xs mt-1">{errors.distrito}</p>
+          {errors.distritoId && (
+            <p className="text-red-500 text-xs mt-1">{errors.distritoId}</p>
           )}
 
           <span className="text-xs text-text-secondary mt-1">Não encontrou seu distrito? <Link to="" className="underline" onClick={() => setIsCreateDistritoModalOpen(true)}>Clique aqui para criar um novo distrito</Link></span>
@@ -254,8 +272,9 @@ export const RegisterDaimokuModal: React.FC<RegisterDaimokuModalProps> = ({
             variant="primary"
             className="flex-1"
             isLoading={isSubmitting}
-            disabled={!formData.memberCode.trim() || !formData.memberName.trim() || !formData.distrito.trim() || !formData.date.trim()}
+            disabled={(!formData.memberCode.trim() && !formData.memberName.trim()) || !formData.distritoId.trim() || !formData.date.trim()}
             loadingText="Registrando..."
+            onClick={handleSubmit}
           >
             Registrar Daimoku
           </ButtonComponent>

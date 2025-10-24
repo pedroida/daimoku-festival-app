@@ -1,21 +1,42 @@
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { toast } from 'sonner'
 
 import { CreateDistritoModal } from '~/components/common/CreateDistritoModal'
 import { AppHeader } from '~/components/common/Header'
 import { ButtonComponent } from '~/components/ui/button'
-import { BaseModal } from '~/components/ui/modal'
 import type { Distrito } from '~/domain/entities/Distrito'
+import useHttpRequest from '~/hooks/common/useHttpRequest'
 
 export const Component = () => {
+  const httpClient = useHttpRequest()
   const [isOpen, setIsOpen] = useState(false)
-  const [distritos, setDistritos] = useState<Distrito[]>([
-    { id: "1", name: "Guarapuava" },
-    { id: "2", name: "Uvaranas" },
-    { id: "3", name: "Oficinas" },
-  ])
+  const [distritos, setDistritos] = useState<Distrito[]>([])
 
+  useEffect(() => {
+    const fetchDistritos = async () => {
+      const response = await httpClient.get<Distrito[]>('/distritos')
+      if (response) {
+        setDistritos(response)
+      }
+    }
+    fetchDistritos()
+  }, [])
+
+  const sortedDistritos = useMemo(() => {
+    return [...distritos].sort((a, b) => a.name.localeCompare(b.name))
+  }, [distritos])
+  
   const addDistrito = (distrito: Distrito) => {
-    setDistritos([...distritos, distrito].sort((a, b) => a.name.localeCompare(b.name)))
+    httpClient.post<Distrito, Distrito>('/distritos', distrito)
+    .then((response) => {
+      if (response) {
+        setDistritos([...sortedDistritos, response])
+        toast.success('Distrito adicionado com sucesso')
+      }
+    })
+    .catch((error) => {
+      toast.error(error.response.data.error)
+    })
   }
 
   return (
@@ -38,6 +59,7 @@ export const Component = () => {
               onClick={() => setIsOpen(true)}
               variant="primary"
               size="md"
+              className="cursor-pointer"
             >
               Adicionar Distrito
             </ButtonComponent>
@@ -61,9 +83,9 @@ export const Component = () => {
                 </tr>
               </thead>
               <tbody className="bg-background divide-y divide-border">
-                {distritos.map((item, index) => (
+                {sortedDistritos.map((item, index) => (
                   <tr 
-                    key={item.name}
+                    key={item.id}
                     className={`
                       transition-colors duration-200
                       ${index % 2 === 0 ? 'bg-background' : 'bg-fill/20'}

@@ -1,6 +1,5 @@
 import * as React from "react"
 import { useState } from "react"
-import { toast } from "sonner"
 
 import { Distrito } from "~/domain/entities/Distrito"
 
@@ -79,7 +78,6 @@ export const CreateDistritoModal: React.FC<CreateDistritoModalProps> = ({
       const distrito = new Distrito(crypto.randomUUID(), formData.name)
       addDistrito(distrito)
       setIsOpen(false)
-      toast.success('Distrito adicionado com sucesso')
     } catch (error) {
       console.error('Error creating distrito:', error)
       // Handle error (show toast, etc.)
