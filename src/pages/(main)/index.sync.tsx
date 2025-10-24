@@ -257,22 +257,22 @@ const httpClient = useHttpRequest()
             <CardDescription>Contagem regressiva para o encerramento do período</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-4 gap-4">
+            <div className="grid grid-cols-4 lg:gap-4 gap-2">
               <div className="flex flex-col items-center justify-center rounded-lg bg-background p-4 shadow-sm">
-                <div className="text-4xl font-bold text-primary">{timeRemaining.days}</div>
-                <div className="text-sm text-muted-foreground">Dias</div>
+                <div className="lg:text-4xl text-2xl font-bold text-primary">{timeRemaining.days}</div>
+                <div className="lg:text-sm text-xs text-muted-foreground">Dias</div>
               </div>
               <div className="flex flex-col items-center justify-center rounded-lg bg-background p-4 shadow-sm">
-                <div className="text-4xl font-bold text-primary">{timeRemaining.hours}</div>
-                <div className="text-sm text-muted-foreground">Horas</div>
+                <div className="lg:text-4xl text-2xl font-bold text-primary">{timeRemaining.hours}</div>
+                <div className="lg:text-sm text-xs text-muted-foreground">Horas</div>
               </div>
               <div className="flex flex-col items-center justify-center rounded-lg bg-background p-4 shadow-sm">
-                <div className="text-4xl font-bold text-primary">{timeRemaining.minutes}</div>
-                <div className="text-sm text-muted-foreground">Minutos</div>
+                <div className="lg:text-4xl text-2xl font-bold text-primary">{timeRemaining.minutes}</div>
+                <div className="lg:text-sm text-xs text-muted-foreground">Minutos</div>
               </div>
               <div className="flex flex-col items-center justify-center rounded-lg bg-background p-4 shadow-sm">
-                <div className="text-4xl font-bold text-primary">{timeRemaining.seconds}</div>
-                <div className="text-sm text-muted-foreground">Segundos</div>
+                <div className="lg:text-4xl text-2xl font-bold text-primary">{timeRemaining.seconds}</div>
+                <div className="lg:text-sm text-xs text-muted-foreground">Segundos</div>
               </div>
             </div>
           </CardContent>
@@ -326,8 +326,7 @@ const httpClient = useHttpRequest()
           />
         </div>
 
-        {/* Charts Row */}
-        <div className="grid gap-4 lg:grid-cols-2">
+        {false && <div className="flex flex-col lg:flex-row gap-4 w-full">
           {/* Cumulative Hours Chart */}
           <Card>
             <CardHeader>
@@ -342,7 +341,7 @@ const httpClient = useHttpRequest()
                     color: "hsl(var(--chart-4))",
                   },
                 }}
-                className="h-[300px] w-full"
+                className="lg:h-[300px] h-[200px] lg:w-full w-5/6"
               >
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={dailyData.filter((_, i) => i % 7 === 0)}>
@@ -377,7 +376,7 @@ const httpClient = useHttpRequest()
                     color: "hsl(var(--chart-2))",
                   },
                 }}
-                className="h-[300px] w-full"
+                className="lg:h-[300px] h-[200px] lg:w-full w-5/6"
               >
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={weeklyData}>
@@ -391,7 +390,7 @@ const httpClient = useHttpRequest()
               </ChartContainer>
             </CardContent>
           </Card>
-        </div>
+        </div>}
       </div>
     </div>
 

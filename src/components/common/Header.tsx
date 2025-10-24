@@ -3,20 +3,12 @@ import type { FC } from "react"
 import { Link, useLocation, useNavigate } from "react-router"
 
 import bsgi from "~/assets/img/bsgi.png"
-import { useSetTheme, useThemeAtomValue } from "~/hooks/common"
 
 import { Tooltip } from "../ui/tooltip"
 import { TooltipContent, TooltipTrigger } from "../ui/tooltip/Tooltip"
 
 export const AppHeader: FC = () => {
   const navigate = useNavigate()
-  const theme = useThemeAtomValue()
-  const setTheme = useSetTheme()
-  const themeOptions = [
-    { value: 'light', icon: 'i-mingcute-sun-line', label: 'Light' },
-    { value: 'dark', icon: 'i-mingcute-moon-line', label: 'Dark' },
-  ] as const
-
   const goToHome = () => {
     navigate('/')
   }
@@ -53,31 +45,6 @@ export const AppHeader: FC = () => {
               }])}>
                 Distritos
               </Link>
-              <div className="flex items-center gap-1 p-1 bg-material-medium rounded-lg">
-                {themeOptions.map(({ value, icon, label }) => (
-                  <Tooltip key={value}>
-                    <TooltipTrigger>
-                      <button
-                        type="button"
-                        onClick={() => setTheme(value)}
-                        className={`
-                          size-7 flex items-center justify-center rounded-md transition-all text-xs font-medium
-                          ${
-                            theme === value
-                              ? 'bg-background text-text shadow-sm'
-                              : 'text-placeholder-text hover:text-text'
-                          }
-                        `}
-                      >
-                        <i className={`${icon} w-4 h-4`} />
-                      </button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <span>{label}</span>
-                    </TooltipContent>
-                  </Tooltip>
-                ))}
-              </div>
             </div>
           </div>
         </div>
