@@ -1,5 +1,5 @@
 import { CalendarDays, Clock,Eye, Users } from "lucide-react"
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Bar, BarChart,CartesianGrid, Line, LineChart, ResponsiveContainer, XAxis, YAxis } from "recharts"
 import { toast } from 'sonner'
 
@@ -47,6 +47,8 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '~/components/ui/tooltip/Tooltip'
+import useHttpRequest from "~/hooks/common/useHttpRequest"
+
 
   // Simulated data for daily practice (October 2025 - April 2026)
   const generateDailyData = () => {
@@ -75,38 +77,6 @@ import {
   
   const dailyData = generateDailyData()
   
-  // Current progress (simulated)
-  const objectives = [
-    {
-      title: "Horas de Daimoku",
-      current: dailyData.at(-1).cumulative,
-      target: 30000,
-      icon: Clock,
-      color: "hsl(var(--chart-4))",
-    },
-    {
-      title: "Objetivos do Festival",
-      current: 127,
-      target: 150,
-      icon: CalendarDays,
-      color: "hsl(var(--chart-1))",
-    },
-    {
-      title: "Figurantes e Apoios",
-      current: 245,
-      target: 300,
-      icon: Users,
-      color: "hsl(var(--chart-2))",
-    },
-    {
-      title: "Espectadores",
-      current: 198,
-      target: 300,
-      icon: Eye,
-      color: "hsl(var(--chart-3))",
-    },
-  ]
-  
   // Weekly summary for bar chart
   const weeklyData = [
     { week: "Sem 1", hours: 1250 },
@@ -118,6 +88,8 @@ import {
   ]
 
 export const Component = () => {
+const httpClient = useHttpRequest()
+
   const [starCount, setStarCount] = useState(42)
   const [isStarred, setIsStarred] = useState(false)
   const [likesCount, setLikesCount] = useState(127)
@@ -137,7 +109,60 @@ export const Component = () => {
     seconds: 0,
   })
 
+  const [totalMinutes, setTotalMinutes] = useState(0)
+
+  const minutesToHours = (minutes: number) => {
+    return Number((minutes / 60).toFixed(2))
+  }
+
+  // Current progress (simulated)
+  const objectives = [
+    {
+      title: "Horas de Daimoku",
+      current: minutesToHours(totalMinutes),
+      target: 30000,
+      icon: Clock,
+      color: "hsl(var(--chart-4))",
+    },
+    {
+      title: "Figurantes e Apoios",
+      target: 150,
+      icon: CalendarDays,
+      color: "hsl(var(--chart-1))",
+      onlyTarget: true,
+    },
+    {
+      title: "Espectadores",
+      target: 300,
+      icon: Users,
+      color: "hsl(var(--chart-2))",
+      onlyTarget: true,
+    },
+    {
+      title: "Novas vidas convertidas e vitoriosas",
+      target: 30,
+      icon: Users,
+      color: "hsl(var(--chart-3))",
+      onlyTarget: true,
+    },
+  ]
+
+  const updateTotalMinutes = async () => {
+    const response = await httpClient.get<number>('/daimokus/total-minutes')
+    if (response) {
+      setTotalMinutes(response)
+    }
+  }
+
   useEffect(() => {
+    const fetchTotalMinutes = async () => {
+      const response = await httpClient.get<number>('/daimokus/total-minutes')
+      if (response) {
+        setTotalMinutes(response)
+      }
+    }
+  
+    fetchTotalMinutes()
     const calculateTimeRemaining = () => {
       const targetDate = new Date(2026, 3, 30, 23, 59, 59) // April 30, 2026, 23:59:59
       const now = new Date()
@@ -253,11 +278,14 @@ export const Component = () => {
           </CardContent>
         </Card>
 
+        <div className="flex justify-center w-full">
+          <p className="text-2xl font-bold">Objetivos do Festival</p>
+        </div>
         {/* Objectives Grid */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           {objectives.map((objective) => {
             const Icon = objective.icon
-            const percentage = Math.round((objective.current / objective.target) * 100)
+            const percentage = Math.round(((objective.current ?? 0) / objective.target) * 100)
 
             return (
               <Card key={objective.title}>
@@ -267,18 +295,19 @@ export const Component = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-2">
-                    <div className="text-2xl font-bold">{objective.current.toLocaleString("pt-BR")}</div>
-                    <p className="text-xs text-muted-foreground">
+                    {!objective.onlyTarget && <div className="text-2xl font-bold">{(objective.current ?? 0).toLocaleString("pt-BR")}</div>}
+                    {objective.onlyTarget && <div className="text-4xl font-bold">{(objective.target).toLocaleString("pt-BR")}</div>}
+                    {!objective.onlyTarget && <p className="text-xs text-muted-foreground">
                       de {objective.target.toLocaleString("pt-BR")} ({percentage}%)
-                    </p>
-                    <Progress
+                    </p>}
+                    {!objective.onlyTarget && <Progress
                       value={percentage}
                       className="h-2"
                       style={{
                         // @ts-ignore
                         "--progress-background": objective.color,
                       }}
-                    />
+                    />}
                   </div>
                 </CardContent>
               </Card>
@@ -293,6 +322,7 @@ export const Component = () => {
           <RegisterDaimokuModal
             isOpen={isRegisterDaimokuModalOpen}
             setIsOpen={setIsRegisterDaimokuModalOpen}
+            updateTotalMinutes={updateTotalMinutes}
           />
         </div>
 
@@ -362,40 +392,11 @@ export const Component = () => {
             </CardContent>
           </Card>
         </div>
-
-        {/* Summary Card */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Resumo do Objetivo Individual</CardTitle>
-            <CardDescription>
-              1 hora diária de Daimoku - Nam-myoho-renge-kyo como base para minha vitória pessoal e o total sucesso do
-              Festival
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid gap-4 md:grid-cols-3">
-              <div className="space-y-1">
-                <p className="text-sm text-muted-foreground">Dias Completos</p>
-                <p className="text-2xl font-bold">142</p>
-              </div>
-              <div className="space-y-1">
-                <p className="text-sm text-muted-foreground">Média Diária</p>
-                <p className="text-2xl font-bold">
-                  {Math.round(dailyData.at(-1).cumulative / dailyData.length)} horas
-                </p>
-              </div>
-              <div className="space-y-1">
-                <p className="text-sm text-muted-foreground">Dias Restantes</p>
-                <p className="text-2xl font-bold">{Math.max(0, 213 - dailyData.length)}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
       </div>
     </div>
 
         {/* Interactive Demo */}
-        <section className="py-16 border-t border-border">
+        {false && <section className="py-16 border-t border-border">
           <div className="text-center mb-12">
             <h2 className="text-2xl font-semibold text-text mb-4">
               Interactive Components
@@ -809,44 +810,7 @@ export const Component = () => {
               </div>
             </div>
           </div>
-        </section>
-
-        {/* Quick Start */}
-        <section className="py-16">
-          <div className="max-w-2xl mx-auto text-center">
-            <h2 className="text-2xl font-semibold text-text mb-4">
-              Quick Start
-            </h2>
-            <p className="text-text-secondary mb-8">
-              Get up and running in less than a minute
-            </p>
-
-            <div className="p-3 bg-material-opaque rounded-xl text-left border border-border">
-              <div className="flex items-center gap-2 mb-4">
-                <div className="flex gap-2">
-                  <div className="w-3 h-3 bg-red rounded-full" />
-                  <div className="w-3 h-3 bg-yellow rounded-full" />
-                  <div className="w-3 h-3 bg-green rounded-full" />
-                </div>
-                <span className="text-placeholder-text text-sm font-mono">
-                  Terminal
-                </span>
-              </div>
-              <div className="font-mono text-sm space-y-2">
-                <div className="text-placeholder-text"># Clone and install</div>
-                <div className="text-green">pnpm install</div>
-                <div className="text-placeholder-text mt-4">
-                  # Start development server
-                </div>
-                <div className="text-green">pnpm dev</div>
-                <div className="text-placeholder-text mt-4">
-                  # Build for production
-                </div>
-                <div className="text-green">pnpm build</div>
-              </div>
-            </div>
-          </div>
-        </section>
+        </section>}
       </div>
     </div>
   )

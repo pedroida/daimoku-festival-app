@@ -16,6 +16,7 @@ import { CreateDistritoModal } from "./CreateDistritoModal"
 interface RegisterDaimokuModalProps {
   isOpen: boolean
   setIsOpen: (isOpen: boolean) => void
+  updateTotalMinutes: () => void
 }
 
 interface FormData {
@@ -29,6 +30,7 @@ interface FormData {
 export const RegisterDaimokuModal: React.FC<RegisterDaimokuModalProps> = ({ 
   isOpen,
   setIsOpen,
+  updateTotalMinutes
 }) => {
   const MAX_MINUTES = 240;
   const [isCreateDistritoModalOpen, setIsCreateDistritoModalOpen] = useState(false)
@@ -122,6 +124,7 @@ export const RegisterDaimokuModal: React.FC<RegisterDaimokuModalProps> = ({
       .then((response) => {
         if (response) {
           toast.success('Daimoku registrado com sucesso')
+          updateTotalMinutes()
           setIsOpen(false)
         }
       })
